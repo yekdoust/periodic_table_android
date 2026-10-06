@@ -166,7 +166,7 @@ public final class PeriodicTableView extends WebView {
         h.append("<script>");
         h.append("function pick(z){");
         h.append("document.querySelectorAll('.cell.selected').forEach(function(x){x.classList.remove('selected');});");
-        h.append("var e=document.querySelector(\'.cell[data-z="\'+z+\'"]\'); if(e)e.classList.add(\'selected\');");
+        h.append("var e=document.querySelector('[data-z=\\\"'+z+'\\\"]'); if(e)e.classList.add('selected');");
         h.append("if(window.Android) Android.select(z);");
         h.append("}");
         h.append("function selectElement(z){pick(z);}");
