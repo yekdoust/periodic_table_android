@@ -6,13 +6,13 @@ import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.view.View;
-import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class PeriodicTableView extends FrameLayout {
+public final class PeriodicTableView extends LinearLayout {
     public interface Listener { void onElement(int z); }
 
     private final List<Element> elements;
@@ -20,7 +20,7 @@ public final class PeriodicTableView extends FrameLayout {
     private int selectedZ = 1;
 
     private final float density;
-    private final int cellW, cellH, left, top, gap;
+    private final int cellW, cellH, gap, labelW;
     private final Map<Integer, TextView> cells = new HashMap<>();
 
     private static final Map<String, Integer> COLORS = new HashMap<>();
@@ -43,110 +43,131 @@ public final class PeriodicTableView extends FrameLayout {
         density = getResources().getDisplayMetrics().density;
         cellW = dp(86);
         cellH = dp(72);
-        left = dp(42);
-        top = dp(34);
         gap = dp(4);
+        labelW = dp(42);
+        setOrientation(VERTICAL);
+        setGravity(Gravity.TOP | Gravity.START);
         setBackgroundColor(Color.parseColor("#F4F6F8"));
-        setWillNotDraw(false);
+        setPadding(0, 0, 0, dp(8));
         buildTable();
     }
 
-    private int dp(int value) {
-        return Math.round(value * density);
+    private int dp(int v) { return Math.round(v * density); }
+
+    public int tableWidth() { return labelW + 18 * cellW + 17 * gap; }
+    public int tableHeight() { return dp(30) + 7 * cellH + 6 * gap + dp(18) + 2 * cellH + gap + dp(14); }
+
+    private Element getElement(int z) { return elements.get(z - 1); }
+
+    private LinearLayout row() {
+        LinearLayout r = new LinearLayout(getContext());
+        r.setOrientation(HORIZONTAL);
+        r.setGravity(Gravity.CENTER_VERTICAL);
+        r.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+        r.setPadding(0, 0, 0, 0);
+        return r;
     }
 
-    public int tableWidth() {
-        return left + 18 * cellW + 17 * gap + dp(16);
+    private View spacer() {
+        TextView v = new TextView(getContext());
+        v.setBackgroundColor(Color.TRANSPARENT);
+        return v;
     }
 
-    public int tableHeight() {
-        int fStart = top + 7 * (cellH + gap) + dp(18);
-        return fStart + 2 * (cellH + gap) + dp(12);
-    }
+    private void addHeader() {
+        LinearLayout r = row();
+        TextView label = headerText("");
+        r.addView(label, lp(labelW, dp(28)));
 
-    private boolean isFBlock(int z) {
-        return (z >= 58 && z <= 71) || (z >= 90 && z <= 103);
-    }
-
-    private int fIndex(int z) {
-        return z < 72 ? z - 58 : z - 90;
-    }
-
-    private float xForGroup(int group) {
-        return left + (group - 1) * (cellW + gap);
-    }
-
-    private float yForPeriod(int period) {
-        return top + (period - 1) * (cellH + gap);
-    }
-
-    private void buildTable() {
-        addHeaderLabels();
-
-        for (Element e : elements) {
-            if (isFBlock(e.z)) continue;
-            addElementCell(e, xForGroup(e.group), yForPeriod(e.period));
-        }
-
-        int fStartY = top + 7 * (cellH + gap) + dp(18);
-        addTextLabel("Ln", dp(18), fStartY + dp(27));
-        addTextLabel("An", dp(18), fStartY + cellH + gap + dp(27));
-
-        for (int i = 0; i < 14; i++) {
-            Element lanthanide = findElement(58 + i);
-            Element actinide = findElement(90 + i);
-            addElementCell(lanthanide, xForGroup(i + 4), fStartY);
-            addElementCell(actinide, xForGroup(i + 4), fStartY + cellH + gap);
-        }
-    }
-
-    private void addHeaderLabels() {
         for (int g = 1; g <= 18; g++) {
-            TextView t = new TextView(getContext());
-            t.setText("G" + g);
-            t.setTextSize(9);
-            t.setTextColor(Color.parseColor("#17324D"));
-            t.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-            t.setGravity(Gravity.CENTER);
-            addView(t, lp(dp((int) xForGroup(g)), dp(1), cellW, dp(25)));
+            TextView h = headerText("G" + g);
+            LinearLayout.LayoutParams p = lp(cellW, dp(28));
+            p.setMargins(g == 1 ? 0 : gap, 0, 0, 0);
+            r.addView(h, p);
         }
-
-        for (int p = 1; p <= 7; p++) {
-            TextView t = new TextView(getContext());
-            t.setText("P" + p);
-            t.setTextSize(9);
-            t.setTextColor(Color.parseColor("#17324D"));
-            t.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-            t.setGravity(Gravity.CENTER);
-            addView(t, lp(dp(1), (int) yForPeriod(p) + dp(12), dp(34), dp(28)));
-        }
+        addView(r);
     }
 
-    private void addTextLabel(String text, int x, int y) {
+    private TextView headerText(String s) {
         TextView t = new TextView(getContext());
-        t.setText(text);
+        t.setText(s);
         t.setTextSize(9);
         t.setTextColor(Color.parseColor("#17324D"));
         t.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         t.setGravity(Gravity.CENTER);
-        addView(t, lp(x - dp(5), y - dp(8), dp(34), dp(30)));
+        return t;
     }
 
-    private FrameLayout.LayoutParams lp(int x, int y, int w, int h) {
-        FrameLayout.LayoutParams p = new FrameLayout.LayoutParams(w, h);
-        p.leftMargin = x;
-        p.topMargin = y;
-        return p;
+    private void addMainRow(int period) {
+        LinearLayout r = row();
+
+        TextView pl = headerText("P" + period);
+        r.addView(pl, lp(labelW, cellH));
+
+        Map<Integer, Element> byGroup = new HashMap<>();
+        for (Element e : elements) {
+            if (e.period == period && e.group >= 1 && e.group <= 18 && e.z != 58 && e.z != 59) {
+                byGroup.put(e.group, e);
+            }
+        }
+
+        for (int g = 1; g <= 18; g++) {
+            Element e = byGroup.get(g);
+            View child = e == null ? spacer() : makeCell(e);
+            LinearLayout.LayoutParams p = lp(cellW, cellH);
+            p.setMargins(g == 1 ? 0 : gap, 0, 0, 0);
+            r.addView(child, p);
+        }
+        addView(r);
     }
 
-    private Element findElement(int z) {
-        return elements.get(z - 1);
+    private void addFRow(String label, int startZ) {
+        LinearLayout r = row();
+        TextView pl = headerText(label);
+        r.addView(pl, lp(labelW, cellH));
+
+        for (int i = 0; i < 18; i++) {
+            Element e = null;
+            if (i >= 3) {
+                int z = startZ + (i - 3);
+                if (z <= startZ + 13) e = getElement(z);
+            }
+            View child = e == null ? spacer() : makeCell(e);
+            LinearLayout.LayoutParams p = lp(cellW, cellH);
+            p.setMargins(i == 0 ? 0 : gap, 0, 0, 0);
+            r.addView(child, p);
+        }
+        addView(r);
+    }
+
+    private LinearLayout.LayoutParams lp(int w, int h) {
+        return new LinearLayout.LayoutParams(w, h);
+    }
+
+    private TextView makeCell(Element e) {
+        TextView cell = new TextView(getContext());
+        cell.setText(e.z + "\n" + e.symbol + "\nA=" + e.mass + "\nG" + e.groupText + " P" + e.period);
+        cell.setTextSize(10);
+        cell.setTextColor(Color.parseColor("#24566A"));
+        cell.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        cell.setGravity(Gravity.CENTER);
+        cell.setLineSpacing(0, 0.85f);
+        cell.setPadding(dp(2), dp(2), dp(2), dp(2));
+        cell.setBackground(cellBackground(e, e.z == selectedZ));
+        cell.setContentDescription(e.nameFa + " (" + e.symbol + ")");
+        cell.setOnClickListener(v -> {
+            selectedZ = e.z;
+            refreshSelection();
+            if (listener != null) listener.onElement(e.z);
+        });
+        cells.put(e.z, cell);
+        return cell;
     }
 
     private GradientDrawable cellBackground(Element e, boolean selected) {
         int base = COLORS.containsKey(e.category) ? COLORS.get(e.category) : Color.LTGRAY;
         GradientDrawable bg = new GradientDrawable();
-        bg.setColor(lighten(base, 0.32f));
+        bg.setColor(lighten(base, 0.30f));
         bg.setCornerRadius(dp(9));
         bg.setStroke(selected ? dp(3) : dp(1), selected ? Color.WHITE : Color.parseColor("#4BAFCC"));
         return bg;
@@ -160,39 +181,10 @@ public final class PeriodicTableView extends FrameLayout {
         );
     }
 
-    private void addElementCell(Element e, float x, float y) {
-        if (e == null) return;
-
-        TextView cell = new TextView(getContext());
-        cell.setText(
-                e.z + "   A=" + e.mass + "\n" +
-                e.symbol + "\n" +
-                "G" + e.groupText + "  P" + e.period
-        );
-        cell.setTextSize(11);
-        cell.setTextColor(Color.parseColor("#24566A"));
-        cell.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        cell.setGravity(Gravity.CENTER);
-        cell.setLineSpacing(0, 0.92f);
-        cell.setPadding(dp(2), dp(3), dp(2), dp(3));
-        cell.setBackground(cellBackground(e, e.z == selectedZ));
-        cell.setContentDescription(e.nameFa + " (" + e.symbol + ")");
-        cell.setOnClickListener(v -> {
-            selectedZ = e.z;
-            refreshSelection();
-            if (listener != null) listener.onElement(e.z);
-        });
-
-        cells.put(e.z, cell);
-        addView(cell, lp(Math.round(x), Math.round(y), cellW, cellH));
-    }
-
     private void refreshSelection() {
         for (Element e : elements) {
-            TextView cell = cells.get(e.z);
-            if (cell != null) {
-                cell.setBackground(cellBackground(e, e.z == selectedZ));
-            }
+            TextView c = cells.get(e.z);
+            if (c != null) c.setBackground(cellBackground(e, e.z == selectedZ));
         }
     }
 
@@ -205,21 +197,10 @@ public final class PeriodicTableView extends FrameLayout {
         refreshSelection();
     }
 
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        setMeasuredDimension(tableWidth(), tableHeight());
-        int childW = MeasureSpec.makeMeasureSpec(cellW, MeasureSpec.EXACTLY);
-        int childH = MeasureSpec.makeMeasureSpec(cellH, MeasureSpec.EXACTLY);
-        for (int i = 0; i < getChildCount(); i++) {
-            View child = getChildAt(i);
-            if (child.getLayoutParams().width == cellW && child.getLayoutParams().height == cellH) {
-                child.measure(childW, childH);
-            } else {
-                child.measure(
-                        MeasureSpec.makeMeasureSpec(child.getLayoutParams().width, MeasureSpec.EXACTLY),
-                        MeasureSpec.makeMeasureSpec(child.getLayoutParams().height, MeasureSpec.EXACTLY)
-                );
-            }
-        }
+    private void buildTable() {
+        addHeader();
+        for (int p = 1; p <= 7; p++) addMainRow(p);
+        addFRow("Ln", 58);
+        addFRow("An", 90);
     }
 }
