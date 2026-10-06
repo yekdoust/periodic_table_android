@@ -13,7 +13,10 @@ public final class PeriodicTableView extends View {
     private static final Map<String,Integer> COLORS=new HashMap<>();
     static { COLORS.put("alkali metal",Color.parseColor("#F7B7B7")); COLORS.put("alkaline earth metal",Color.parseColor("#F7D49B")); COLORS.put("transition metal",Color.parseColor("#F6C98D")); COLORS.put("post-transition metal",Color.parseColor("#FFF0A8")); COLORS.put("metalloid",Color.parseColor("#C5E6A6")); COLORS.put("nonmetal",Color.parseColor("#AEE4E8")); COLORS.put("halogen",Color.parseColor("#BFD7FF")); COLORS.put("noble gas",Color.parseColor("#D9C2F0")); COLORS.put("lanthanide",Color.parseColor("#F2B7D8")); COLORS.put("actinide",Color.parseColor("#D8B6A4")); }
     public PeriodicTableView(Context c,List<Element> e){super(c);elements=e;d=getResources().getDisplayMetrics().density;cellW=dp(84);cellH=dp(70);left=dp(42);top=dp(30);gap=dp(3); setLayerType(View.LAYER_TYPE_SOFTWARE,null); setBackgroundColor(Color.parseColor("#F4F6F8"));}
-    private int dp(int v){return Math.round(v*d);} public int tableWidth(){return left+18*cellW+dp(12);} @Override protected void onMeasure(int w,int h){setMeasuredDimension(tableWidth(),dp(30+7*70+36+2*70));}
+    private int dp(int v){return Math.round(v*d);}
+    public int tableWidth(){return left+18*cellW+17*gap+dp(12);}
+    public int tableHeight(){return top+7*cellH+6*gap+dp(12)+2*cellH+gap+dp(12);}
+    @Override protected void onMeasure(int w,int h){setMeasuredDimension(tableWidth(),tableHeight());}
     public void setOnElementClickListener(Listener l){listener=l;} public void setSelectedZ(int z){selectedZ=z;}
     private Element get(int z){return elements.get(z-1);} private boolean f(int z){return (z>=58&&z<=71)||(z>=90&&z<=103);}
     private int group(int z){ if(z==1)return 1;if(z==2)return 18;if(z>=3&&z<=4)return z-2;if(z>=5&&z<=10)return z+8;if(z>=11&&z<=12)return z-10;if(z>=13&&z<=18)return z; if(z>=19&&z<=36)return z-18;if(z>=37&&z<=54)return z-36;if(z>=55&&z<=86){if(z==55)return 1;if(z==56)return 2;if(z==57)return 3;return z-68;} if(z>=87&&z<=118){if(z==87)return 1;if(z==88)return 2;if(z==89)return 3;return z-101;} return 1;}
