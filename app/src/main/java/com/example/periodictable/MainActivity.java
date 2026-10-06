@@ -17,8 +17,8 @@ package com.example.periodictable;
     public class MainActivity extends Activity {
         private final int NAVY=Color.parseColor("#17324D");
         private final int BG=Color.parseColor("#F4F6F8");
-        private final int CYAN=Color.parseColor("#00BFFF");
-        private final int RED=Color.RED;
+        private static final int CYAN=Color.parseColor("#00BFFF");
+        private static final int RED=Color.RED;
         private EditText search;
         private TextView selectedTitle, compactTv, fullTv, shellTv, ionTv, validTv, groupCalcTv;
         private PeriodicTableView table;
