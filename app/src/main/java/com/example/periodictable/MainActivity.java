@@ -14,6 +14,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -280,48 +281,74 @@ public class MainActivity extends Activity {
         return t;
     }
 
-    private LinearLayout buildTableRows() {
-        LinearLayout rows = new LinearLayout(this);
-        rows.setOrientation(LinearLayout.VERTICAL);
-        rows.setBackgroundColor(BG);
-        rows.setPadding(dp(8), dp(4), dp(8), dp(8));
+    private FrameLayout buildTableRows() {
+        final int cellW = dp(86);
+        final int cellH = dp(72);
+        final int colStep = dp(90);
+        final int rowStep = dp(76);
+        final int left0 = dp(50);
+        final int top0 = dp(34);
 
-        LinearLayout header = makeRow();
-        header.addView(labelCell("", dp(42), dp(28)));
+        FrameLayout canvas = new FrameLayout(this);
+        canvas.setBackgroundColor(BG);
+        canvas.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+
+        // Header: G1 ... G18
         for (int g = 1; g <= 18; g++) {
-            TextView h = labelCell("G" + g, dp(86), dp(28));
-            if (g > 1) h.setPadding(dp(2), dp(2), dp(2), dp(2));
-            header.addView(h);
+            TextView h = labelCell("G" + g, cellW, dp(28));
+            FrameLayout.LayoutParams hp = new FrameLayout.LayoutParams(cellW, dp(28));
+            hp.leftMargin = left0 + (g - 1) * colStep;
+            hp.topMargin = dp(2);
+            canvas.addView(h, hp);
         }
-        rows.addView(header);
 
+        // Period labels and element cells.
         for (int p = 1; p <= 7; p++) {
-            LinearLayout row = makeRow();
-            row.addView(labelCell("P" + p, dp(42), dp(72)));
+            TextView pl = labelCell("P" + p, dp(42), cellH);
+            FrameLayout.LayoutParams pp = new FrameLayout.LayoutParams(dp(42), cellH);
+            pp.leftMargin = dp(2);
+            pp.topMargin = top0 + (p - 1) * rowStep;
+            canvas.addView(pl, pp);
+
             for (int g = 1; g <= 18; g++) {
                 Element e = findByPeriodGroup(p, g);
-                row.addView(e == null ? emptyCell() : makeElementCell(e));
+                if (e == null) continue;
+                TextView cell = makeElementCell(e);
+                FrameLayout.LayoutParams cp = new FrameLayout.LayoutParams(cellW, cellH);
+                cp.leftMargin = left0 + (g - 1) * colStep;
+                cp.topMargin = top0 + (p - 1) * rowStep;
+                canvas.addView(cell, cp);
             }
-            rows.addView(row);
         }
 
-        LinearLayout ln = makeRow();
-        ln.addView(labelCell("Ln", dp(42), dp(72)));
-        for (int g = 1; g <= 18; g++) {
-            int z = (g >= 4 && g <= 17) ? 58 + (g - 4) : -1;
-            ln.addView(z > 0 ? makeElementCell(element(z)) : emptyCell());
-        }
-        rows.addView(ln);
+        // Lanthanides and actinides.
+        TextView lnLabel = labelCell("Ln", dp(42), cellH);
+        FrameLayout.LayoutParams lnp = new FrameLayout.LayoutParams(dp(42), cellH);
+        lnp.leftMargin = dp(2);
+        lnp.topMargin = top0 + 7 * rowStep;
+        canvas.addView(lnLabel, lnp);
 
-        LinearLayout an = makeRow();
-        an.addView(labelCell("An", dp(42), dp(72)));
-        for (int g = 1; g <= 18; g++) {
-            int z = (g >= 4 && g <= 17) ? 90 + (g - 4) : -1;
-            an.addView(z > 0 ? makeElementCell(element(z)) : emptyCell());
-        }
-        rows.addView(an);
+        TextView anLabel = labelCell("An", dp(42), cellH);
+        FrameLayout.LayoutParams anp = new FrameLayout.LayoutParams(dp(42), cellH);
+        anp.leftMargin = dp(2);
+        anp.topMargin = top0 + 8 * rowStep;
+        canvas.addView(anLabel, anp);
 
-        return rows;
+        for (int i = 0; i < 14; i++) {
+            TextView ln = makeElementCell(element(58 + i));
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(cellW, cellH);
+            lp.leftMargin = left0 + (3 + i) * colStep;
+            lp.topMargin = top0 + 7 * rowStep;
+            canvas.addView(ln, lp);
+
+            TextView an = makeElementCell(element(90 + i));
+            FrameLayout.LayoutParams ap = new FrameLayout.LayoutParams(cellW, cellH);
+            ap.leftMargin = left0 + (3 + i) * colStep;
+            ap.topMargin = top0 + 8 * rowStep;
+            canvas.addView(an, ap);
+        }
+
+        return canvas;
     }
 
     private LinearLayout makeRow() {
