@@ -173,12 +173,15 @@ public class MainActivity extends Activity {
         tableScrollH.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
 
         LinearLayout tableRows = buildTableRows();
-        tableScrollH.addView(tableRows, new HorizontalScrollView.LayoutParams(dp(1710), dp(730)));
+        HorizontalScrollView.LayoutParams tableRowsLp =
+                new HorizontalScrollView.LayoutParams(dp(1710), dp(730));
+        tableRowsLp.gravity = Gravity.TOP | Gravity.LEFT;
+        tableScrollH.addView(tableRows, tableRowsLp);
 
         
 
         ScrollView detailScroll = new ScrollView(this);
-        detailScroll.setFillViewport(false);
+        detailScroll.setFillViewport(true);
         detailScroll.setBackgroundColor(Color.WHITE);
         detailScroll.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
@@ -245,19 +248,18 @@ public class MainActivity extends Activity {
         details.addView(groupCalcTv, new LinearLayout.LayoutParams(-1, dp(110)));
 
         detailScroll.addView(details);
-        LinearLayout pageContent = new LinearLayout(this);
-        pageContent.setOrientation(LinearLayout.VERTICAL);
-        pageContent.setBackgroundColor(BG);
 
-        pageContent.addView(tableScrollH, new LinearLayout.LayoutParams(-1, dp(730)));
-        pageContent.addView(detailScroll, new LinearLayout.LayoutParams(-1, -2));
+        // جدول و جزئیات مستقیماً در ریشه قرار می‌گیرند؛
+        // از ScrollView تو‌در‌تو جلوگیری می‌کنیم تا اندازه‌گیری خانه‌ها
+        // در شبیه‌سازهای مختلف پایدار باشد.
+        LinearLayout.LayoutParams tableLp =
+                new LinearLayout.LayoutParams(-1, 0, 0.68f);
+        tableLp.setMargins(0, 0, 0, dp(4));
+        root.addView(tableScrollH, tableLp);
 
-        ScrollView pageScroll = new ScrollView(this);
-        pageScroll.setFillViewport(false);
-        pageScroll.setBackgroundColor(BG);
-        pageScroll.addView(pageContent, new ScrollView.LayoutParams(-1, -2));
-
-        root.addView(pageScroll, new LinearLayout.LayoutParams(-1, 0, 1));
+        LinearLayout.LayoutParams detailLp =
+                new LinearLayout.LayoutParams(-1, 0, 0.32f);
+        root.addView(detailScroll, detailLp);
 
         setContentView(root);
 
