@@ -173,7 +173,7 @@ public class MainActivity extends Activity {
         tableScrollH.setHorizontalScrollBarEnabled(true);
         tableScrollH.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
 
-        LinearLayout tableRows = buildTableRows();
+        FrameLayout tableRows = buildTableRows();
         HorizontalScrollView.LayoutParams tableRowsLp =
                 new HorizontalScrollView.LayoutParams(dp(1710), dp(730));
         tableRowsLp.gravity = Gravity.TOP | Gravity.LEFT;
