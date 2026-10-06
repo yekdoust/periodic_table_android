@@ -62,10 +62,24 @@ package com.example.periodictable;
 
             TextView hint=tv("روی هر خانه لمس کنید تا اطلاعات عنصر و محاسبهٔ آموزشی گروه نمایش داده شود.",13,Color.parseColor("#557080"),false); hint.setPadding(dp(12),0,dp(12),dp(5)); root.addView(hint,new LinearLayout.LayoutParams(-1,dp(34)));
 
-            HorizontalScrollView hsv=new HorizontalScrollView(this); hsv.setFillViewport(false); hsv.setBackgroundColor(BG); hsv.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-            table=new PeriodicTableView(this,elements); table.setOnElementClickListener(this::selectElement);
-            hsv.addView(table,new HorizontalScrollView.LayoutParams(table.tableWidth(),-2));
-            root.addView(hsv,new LinearLayout.LayoutParams(-1,0,1));
+            ScrollView pageScroll=new ScrollView(this);
+            pageScroll.setFillViewport(false);
+            pageScroll.setBackgroundColor(BG);
+            pageScroll.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+            LinearLayout page=new LinearLayout(this);
+            page.setOrientation(LinearLayout.VERTICAL);
+            page.setBackgroundColor(BG);
+
+            HorizontalScrollView hsv=new HorizontalScrollView(this);
+            hsv.setFillViewport(false);
+            hsv.setBackgroundColor(BG);
+            hsv.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+            table=new PeriodicTableView(this,elements);
+            table.setOnElementClickListener(this::selectElement);
+            hsv.addView(table,new HorizontalScrollView.LayoutParams(table.tableWidth(),table.tableHeight()));
+            page.addView(hsv,new LinearLayout.LayoutParams(-1,table.tableHeight()));
+
+            pageScroll.addView(page,new ScrollView.LayoutParams(-1,-2));
 
             ScrollView detailsScroll=new ScrollView(this); detailsScroll.setBackgroundColor(Color.WHITE); detailsScroll.setFillViewport(false); detailsScroll.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
             LinearLayout details=new LinearLayout(this); details.setOrientation(LinearLayout.VERTICAL); details.setPadding(dp(10),dp(8),dp(10),dp(12));
@@ -82,7 +96,15 @@ package com.example.periodictable;
             shellTv=card("توزیع الکترون‌ها در لایه‌ها"); details.addView(shellTv); ionTv=card("یون‌های رایج آموزشی"); details.addView(ionTv); validTv=card("کنترل تعداد الکترون‌ها"); details.addView(validTv);
             TextView ghead=section("محاسبهٔ آموزشی گروه از روی آرایش",Color.parseColor("#F7F0FF")); details.addView(ghead); groupCalcTv=tv("",14,Color.parseColor("#66458A"),false); groupCalcTv.setBackgroundColor(Color.parseColor("#F7F0FF")); groupCalcTv.setGravity(Gravity.RIGHT); details.addView(groupCalcTv,new LinearLayout.LayoutParams(-1,-2));
 
-            detailsScroll.addView(details); root.addView(detailsScroll,new LinearLayout.LayoutParams(-1,0,1));
+            detailsScroll.addView(details);
+            page.addView(detailsScroll,new LinearLayout.LayoutParams(-1,-2));
+            pageScroll.removeAllViews();
+            pageScroll.addView(page,new ScrollView.LayoutParams(-1,-2));
+            root.removeAllViews();
+            root.addView(header,new LinearLayout.LayoutParams(-1,dp(58)));
+            root.addView(searchRow,new LinearLayout.LayoutParams(-1,dp(63)));
+            root.addView(hint,new LinearLayout.LayoutParams(-1,dp(34)));
+            root.addView(pageScroll,new LinearLayout.LayoutParams(-1,0,1));
             setContentView(root);
             this.values=values;
         }
