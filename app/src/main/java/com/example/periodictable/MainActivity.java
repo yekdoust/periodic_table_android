@@ -173,9 +173,9 @@ public class MainActivity extends Activity {
         tableScrollH.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
 
         LinearLayout tableRows = buildTableRows();
-        tableScrollH.addView(tableRows, new HorizontalScrollView.LayoutParams(dp(1710), -1));
+        tableScrollH.addView(tableRows, new HorizontalScrollView.LayoutParams(dp(1710), dp(730)));
 
-        root.addView(tableScrollH, new LinearLayout.LayoutParams(-1, 0, 0.69f));
+        
 
         ScrollView detailScroll = new ScrollView(this);
         detailScroll.setFillViewport(false);
@@ -245,7 +245,19 @@ public class MainActivity extends Activity {
         details.addView(groupCalcTv, new LinearLayout.LayoutParams(-1, dp(110)));
 
         detailScroll.addView(details);
-        root.addView(detailScroll, new LinearLayout.LayoutParams(-1, 0, 0.31f));
+        LinearLayout pageContent = new LinearLayout(this);
+        pageContent.setOrientation(LinearLayout.VERTICAL);
+        pageContent.setBackgroundColor(BG);
+
+        pageContent.addView(tableScrollH, new LinearLayout.LayoutParams(-1, dp(730)));
+        pageContent.addView(detailScroll, new LinearLayout.LayoutParams(-1, -2));
+
+        ScrollView pageScroll = new ScrollView(this);
+        pageScroll.setFillViewport(false);
+        pageScroll.setBackgroundColor(BG);
+        pageScroll.addView(pageContent, new ScrollView.LayoutParams(-1, -2));
+
+        root.addView(pageScroll, new LinearLayout.LayoutParams(-1, 0, 1));
 
         setContentView(root);
 
