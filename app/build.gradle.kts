@@ -8,7 +8,7 @@ android {
         applicationId = "com.example.periodictable"
         minSdk = 23
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 23
+        versionName = "0.23.0"
     }
 }
