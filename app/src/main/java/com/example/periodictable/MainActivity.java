@@ -461,7 +461,10 @@ public class MainActivity extends Activity {
             text.setTextAlign(Paint.Align.LEFT);
             text.setTextSize(Math.max(8f, width * 0.012f));
             text.setColor(Color.DKGRAY);
-            canvas.drawText("VERSION 0.30  |  BUILD 30  |  118 elements", dp(4), height - dp(4), text);
+            canvas.drawText(
+                    "VERSION 0.31  |  BUILD 31  |  لمس طولانی: محاسبهٔ دوره و گروه",
+                    dp(4), height - dp(4), text
+            );
         }
 
         private int findElementAt(float x, float y) {
@@ -755,41 +758,76 @@ public class MainActivity extends Activity {
         box.setBackground(rounded(Color.WHITE, NAVY, 2, 14));
 
         TextView title = textView(
-                e.symbol + " — " + e.nameFa,
-                17, NAVY, true
+                "محاسبهٔ دوره و گروه — " + e.symbol,
+                18, NAVY, true
         );
         title.setGravity(Gravity.CENTER);
-        box.addView(title, new LinearLayout.LayoutParams(-1, dp(34)));
+        box.addView(title, new LinearLayout.LayoutParams(-1, dp(40)));
 
-        TextView cfg = textView(
-                "آرایش الکترونی\n" + prettyCompact(e.config),
-                15, CYAN, true
+        TextView period = textView(
+                periodCalculation(e),
+                14, Color.parseColor("#24566A"), true
         );
-        cfg.setTextDirection(View.TEXT_DIRECTION_LTR);
-        cfg.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-        cfg.setGravity(Gravity.CENTER);
-        box.addView(cfg, new LinearLayout.LayoutParams(-1, dp(58)));
+        period.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
+        period.setBackgroundColor(Color.parseColor("#EEF7FA"));
+        box.addView(period, new LinearLayout.LayoutParams(-1, dp(76)));
 
-        TextView gp = textView(
-                "عدد اتمی " + e.z + "   |   گروه " + e.groupText + "   |   دوره " + e.period,
-                12, Color.DKGRAY, true
+        TextView group = textView(
+                groupCalculation(e),
+                13, Color.parseColor("#66458A"), false
         );
-        gp.setGravity(Gravity.CENTER);
-        box.addView(gp, new LinearLayout.LayoutParams(-1, dp(30)));
+        group.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
+        group.setBackgroundColor(Color.parseColor("#F7F0FF"));
+        box.addView(group, new LinearLayout.LayoutParams(-1, dp(142)));
+
+        TextView result = textView(
+                "نتیجه: دوره " + e.period + "   |   گروه " + e.groupText,
+                14, Color.WHITE, true
+        );
+        result.setGravity(Gravity.CENTER);
+        result.setBackground(rounded(NAVY, NAVY, 1, 10));
+        box.addView(result, new LinearLayout.LayoutParams(-1, dp(42)));
 
         final android.widget.PopupWindow popup = new android.widget.PopupWindow(
-                box, dp(360), dp(128), true
+                box, dp(420), dp(330), true
         );
         popup.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
         popup.setOutsideTouchable(true);
-        popup.setElevation(dp(8));
+        popup.setElevation(dp(10));
         popup.setFocusable(true);
 
         box.setOnClickListener(v -> popup.dismiss());
 
-        int x = Math.max(dp(4), Math.round(screenX - dp(180)));
-        int y = Math.max(dp(4), Math.round(screenY - dp(150)));
+        int x = Math.max(dp(4), Math.round(screenX - dp(210)));
+        int y = Math.max(dp(4), Math.round(screenY - dp(350)));
         popup.showAtLocation(tableCanvas, Gravity.TOP | Gravity.LEFT, x, y);
+    }
+
+    private static String periodCalculation(Element e) {
+        String full = expand(e.config);
+        int maxN = 0;
+        String lastOrbital = "";
+
+        for (String tok : full.split(" ")) {
+            if (tok.length() >= 2 && Character.isDigit(tok.charAt(0))) {
+                int n = tok.charAt(0) - '0';
+                if (n > maxN) {
+                    maxN = n;
+                    lastOrbital = tok;
+                }
+            }
+        }
+
+        if (maxN <= 0) {
+            return "۱) آرایش الکترونی خوانده نشد.\n" +
+                    "۲) دوره از بیشترین عدد اصلی n تعیین می‌شود.\n" +
+                    "نتیجه: دوره " + e.period;
+        }
+
+        return "۱) آرایش کامل بررسی شد.\n" +
+                "۲) بیشترین عدد اصلی n = " + maxN +
+                " (" + lastOrbital + ")\n" +
+                "۳) دوره = بیشترین n = " + maxN;
     }
 
     private void showElementDialog(int z) {
