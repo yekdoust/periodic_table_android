@@ -80,6 +80,18 @@ public class MainActivity extends Activity {
         searchLp.setMargins(0, dp(4), dp(6), 0);
         root.addView(searchButton, searchLp);
 
+        Button legendButton = new Button(this);
+        legendButton.setText("راهنمای رنگ");
+        legendButton.setTextSize(12);
+        legendButton.setTextColor(Color.WHITE);
+        legendButton.setBackground(rounded(Color.parseColor("#4B647A"), Color.parseColor("#4B647A"), 1, 10));
+        legendButton.setOnClickListener(v -> showCategoryLegend());
+
+        FrameLayout.LayoutParams legendLp =
+                new FrameLayout.LayoutParams(dp(112), dp(50), Gravity.TOP | Gravity.LEFT);
+        legendLp.setMargins(dp(6), dp(4), 0, 0);
+        root.addView(legendButton, legendLp);
+
         setContentView(root);
         selectedZ = 1;
         tableCanvas.invalidate();
@@ -449,7 +461,7 @@ public class MainActivity extends Activity {
             text.setTextAlign(Paint.Align.LEFT);
             text.setTextSize(Math.max(8f, width * 0.012f));
             text.setColor(Color.DKGRAY);
-            canvas.drawText("VERSION 0.29  |  BUILD 29  |  118 elements", dp(4), height - dp(4), text);
+            canvas.drawText("VERSION 0.30  |  BUILD 30  |  118 elements", dp(4), height - dp(4), text);
         }
 
         private int findElementAt(float x, float y) {
@@ -613,6 +625,60 @@ public class MainActivity extends Activity {
 
     private Element element(int z) {
         return elements.get(z - 1);
+    }
+
+    private void showCategoryLegend() {
+        String[][] rows = {
+                {"alkali metal", "فلز قلیایی"},
+                {"alkaline earth metal", "فلز قلیایی خاکی"},
+                {"transition metal", "فلز واسطه"},
+                {"post-transition metal", "فلز پس‌واسطه"},
+                {"metalloid", "شبه‌فلز"},
+                {"nonmetal", "نافلز"},
+                {"halogen", "هالوژن"},
+                {"noble gas", "گاز نجیب"},
+                {"lanthanide", "لانتانید"},
+                {"actinide", "اکتینید"}
+        };
+
+        LinearLayout list = new LinearLayout(MainActivity.this);
+        list.setOrientation(LinearLayout.VERTICAL);
+        list.setPadding(dp(12), dp(6), dp(12), dp(6));
+        list.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+
+        for (String[] row : rows) {
+            LinearLayout item = new LinearLayout(MainActivity.this);
+            item.setOrientation(LinearLayout.HORIZONTAL);
+            item.setGravity(Gravity.CENTER_VERTICAL);
+            item.setPadding(dp(4), dp(3), dp(4), dp(3));
+
+            View swatch = new View(MainActivity.this);
+            swatch.setBackground(rounded(categoryColor(row[0]), Color.parseColor("#557080"), 1, 8));
+
+            TextView label = textView(row[1], 14, Color.DKGRAY, true);
+            label.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
+
+            item.addView(swatch, new LinearLayout.LayoutParams(dp(42), dp(36)));
+            LinearLayout.LayoutParams labelLp = new LinearLayout.LayoutParams(0, dp(36), 1);
+            labelLp.setMargins(dp(8), 0, 0, 0);
+            item.addView(label, labelLp);
+
+            list.addView(item);
+        }
+
+        TextView note = textView(
+                "رنگ هر خانه، خانوادهٔ شیمیایی عنصر را نشان می‌دهد.\n" +
+                "Ln = لانتانیدها و An = اکتینیدها در ردیف‌های جداگانه نمایش داده شده‌اند.",
+                12, Color.parseColor("#55616A"), false
+        );
+        note.setPadding(dp(6), dp(10), dp(6), dp(4));
+        list.addView(note);
+
+        new AlertDialog.Builder(MainActivity.this)
+                .setTitle("راهنمای رنگ خانواده‌ها")
+                .setView(list)
+                .setPositiveButton("بستن", null)
+                .show();
     }
 
     private void showSearchDialog() {
