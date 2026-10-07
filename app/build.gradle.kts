@@ -10,5 +10,6 @@ android {
         targetSdk = 37
         versionCode = 23
         versionName = "0.23.0"
+        // VERIFICATION BUILD 23
     }
 }
