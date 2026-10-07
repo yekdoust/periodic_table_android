@@ -3,6 +3,7 @@ package com.example.periodictable;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.os.Bundle;
+import android.os.Handler;
 import android.graphics.Color;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -44,6 +45,8 @@ public class MainActivity extends Activity {
     private PeriodicTableCanvas tableCanvas;
     private final Map<Integer, TextView> tableCells = new HashMap<>();
     private int selectedZ = 1;
+    private final Handler touchHandler = new Handler();
+    private Runnable longPressAction;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -387,12 +390,69 @@ public class MainActivity extends Activity {
             text.setTextAlign(Paint.Align.LEFT);
             text.setTextSize(Math.max(8f, width * 0.012f));
             text.setColor(Color.DKGRAY);
-            canvas.drawText("VERSION 0.26  |  BUILD 26  |  118 elements", dp(4), height - dp(4), text);
+            canvas.drawText("VERSION 0.27  |  BUILD 27  |  118 elements", dp(4), height - dp(4), text);
+        }
+
+        private int findElementAt(float x, float y) {
+            int width = getWidth();
+            int height = getHeight();
+
+            float labelW = Math.max(dp(22), width * 0.035f);
+            float gap = Math.max(dp(2), width * 0.003f);
+            float cellW = (width - labelW - gap * 19f - dp(8)) / 18f;
+            float top = dp(24);
+            float bottom = dp(12);
+            float cellH = Math.min(dp(58), (height - top - bottom - gap * 9f) / 9f);
+            if (cellH < dp(36)) cellH = dp(36);
+
+            int col = (int)((x - labelW - gap) / (cellW + gap));
+            int row = (int)((y - top) / (cellH + gap));
+
+            if (col < 0 || col >= 18 || row < 0 || row >= 9) return -1;
+
+            float localX = x - (labelW + gap + col * (cellW + gap));
+            float localY = y - (top + row * (cellH + gap));
+            if (localX < 0 || localX > cellW || localY < 0 || localY > cellH) return -1;
+
+            if (row < 7) {
+                for (Element el : elements) {
+                    if (el.period == row + 1 && el.group == col + 1 &&
+                            !((el.z >= 58 && el.z <= 71) || (el.z >= 90 && el.z <= 103))) {
+                        return el.z;
+                    }
+                }
+            } else if (col >= 3 && col <= 16) {
+                return row == 7 ? 58 + col - 3 : 90 + col - 3;
+            }
+            return -1;
         }
 
         @Override
         public boolean onTouchEvent(android.view.MotionEvent event) {
+            if (event.getAction() == android.view.MotionEvent.ACTION_DOWN) {
+                final float downX = event.getX();
+                final float downY = event.getY();
+
+                longPressAction = () -> {
+                    int z = findElementAt(downX, downY);
+                    if (z > 0) {
+                        showQuickInfo(z, event.getRawX(), event.getRawY());
+                    }
+                };
+                touchHandler.postDelayed(longPressAction, 550);
+                return true;
+            }
+
+            if (event.getAction() == android.view.MotionEvent.ACTION_MOVE) {
+                return true;
+            }
+
             if (event.getAction() != android.view.MotionEvent.ACTION_UP) return true;
+
+            if (longPressAction != null) {
+                touchHandler.removeCallbacks(longPressAction);
+                longPressAction = null;
+            }
 
             int width = getWidth();
             int height = getHeight();
@@ -405,34 +465,11 @@ public class MainActivity extends Activity {
             float cellH = Math.min(dp(58), (height - top - bottom - gap * 9f) / 9f);
             if (cellH < dp(36)) cellH = dp(36);
 
-            float x = event.getX();
-            float y = event.getY();
-
-            int col = (int)((x - labelW - gap) / (cellW + gap));
-            int row = (int)((y - top) / (cellH + gap));
-
-            if (col >= 0 && col < 18 && row >= 0 && row < 9) {
-                float localX = x - (labelW + gap + col * (cellW + gap));
-                float localY = y - (top + row * (cellH + gap));
-                if (localX >= 0 && localX <= cellW && localY >= 0 && localY <= cellH) {
-                    int z = -1;
-                    if (row < 7) {
-                        for (Element el : elements) {
-                            if (el.period == row + 1 && el.group == col + 1 &&
-                                    !((el.z >= 58 && el.z <= 71) || (el.z >= 90 && el.z <= 103))) {
-                                z = el.z;
-                                break;
-                            }
-                        }
-                    } else if (col >= 3 && col <= 16) {
-                        z = row == 7 ? 58 + col - 3 : 90 + col - 3;
-                    }
-                    if (z > 0) {
-                        selectedZ = z;
-                        invalidate();
-                        showElementDialog(z);
-                    }
-                }
+            int z = findElementAt(event.getX(), event.getY());
+            if (z > 0) {
+                selectedZ = z;
+                invalidate();
+                showElementDialog(z);
             }
             return true;
         }
@@ -512,6 +549,56 @@ public class MainActivity extends Activity {
 
     private Element element(int z) {
         return elements.get(z - 1);
+    }
+
+    private void showQuickInfo(int z, float screenX, float screenY) {
+        if (z < 1 || z > 118 || elements == null || elements.size() < 118) return;
+
+        Element e = element(z);
+
+        LinearLayout box = new LinearLayout(MainActivity.this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(14), dp(8), dp(14), dp(8));
+        box.setGravity(Gravity.CENTER);
+        box.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        box.setBackground(rounded(Color.WHITE, NAVY, 2, 14));
+
+        TextView title = textView(
+                e.symbol + " — " + e.nameFa,
+                17, NAVY, true
+        );
+        title.setGravity(Gravity.CENTER);
+        box.addView(title, new LinearLayout.LayoutParams(-1, dp(34)));
+
+        TextView cfg = textView(
+                "آرایش الکترونی\n" + prettyCompact(e.config),
+                15, CYAN, true
+        );
+        cfg.setTextDirection(View.TEXT_DIRECTION_LTR);
+        cfg.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+        cfg.setGravity(Gravity.CENTER);
+        box.addView(cfg, new LinearLayout.LayoutParams(-1, dp(58)));
+
+        TextView gp = textView(
+                "عدد اتمی " + e.z + "   |   گروه " + e.groupText + "   |   دوره " + e.period,
+                12, Color.DKGRAY, true
+        );
+        gp.setGravity(Gravity.CENTER);
+        box.addView(gp, new LinearLayout.LayoutParams(-1, dp(30)));
+
+        final android.widget.PopupWindow popup = new android.widget.PopupWindow(
+                box, dp(360), dp(128), true
+        );
+        popup.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
+        popup.setOutsideTouchable(true);
+        popup.setElevation(dp(8));
+        popup.setFocusable(true);
+
+        box.setOnClickListener(v -> popup.dismiss());
+
+        int x = Math.max(dp(4), Math.round(screenX - dp(180)));
+        int y = Math.max(dp(4), Math.round(screenY - dp(150)));
+        popup.showAtLocation(tableCanvas, Gravity.TOP | Gravity.LEFT, x, y);
     }
 
     private void showElementDialog(int z) {
