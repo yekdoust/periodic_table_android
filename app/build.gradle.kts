@@ -5,11 +5,11 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.periodictable.v025"
+        applicationId = "com.example.periodictable.v026"
         minSdk = 23
         targetSdk = 35
-        versionCode = 25
-        versionName = "0.25.0"
-        // VERIFICATION BUILD 25 - REAL PERIODIC TABLE
+        versionCode = 26
+        versionName = "0.26.0"
+        // VERIFICATION BUILD 26 - TOUCH ELEMENT DETAILS
     }
 }
