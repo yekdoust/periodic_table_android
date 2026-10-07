@@ -317,6 +317,7 @@ public class MainActivity extends Activity {
         private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint highlight = new Paint(Paint.ANTI_ALIAS_FLAG);
 
         PeriodicTableCanvas() {
             super(MainActivity.this);
@@ -368,6 +369,33 @@ public class MainActivity extends Activity {
             float cellH = Math.min(dp(58), (height - top - bottom - gap * 9f) / 9f);
             if (cellH < dp(36)) cellH = dp(36);
 
+            // برجسته‌سازی آموزشی دوره و گروه عنصر انتخاب‌شده
+            if (elements != null && elements.size() >= selectedZ) {
+                Element selected = element(selectedZ);
+                highlight.setStyle(Paint.Style.FILL);
+                highlight.setColor(Color.argb(30, 0, 191, 255));
+
+                float periodY = top + (selected.period - 1) * (cellH + gap);
+                canvas.drawRoundRect(
+                        labelW + gap / 2f,
+                        periodY - gap / 2f,
+                        width - gap / 2f,
+                        periodY + cellH + gap / 2f,
+                        dp(5), dp(5), highlight
+                );
+
+                if (selected.group >= 1 && selected.group <= 18) {
+                    float groupX = labelW + gap + (selected.group - 1) * (cellW + gap);
+                    canvas.drawRoundRect(
+                            groupX - gap / 2f,
+                            top - gap / 2f,
+                            groupX + cellW + gap / 2f,
+                            top + 7 * (cellH + gap) - gap / 2f,
+                            dp(5), dp(5), highlight
+                    );
+                }
+            }
+
             text.setColor(NAVY);
             text.setTextAlign(Paint.Align.CENTER);
             text.setTextSize(Math.max(7f, cellW * 0.13f));
@@ -375,6 +403,21 @@ public class MainActivity extends Activity {
             for (int g = 1; g <= 18; g++) {
                 float x = labelW + gap + (g - 1) * (cellW + gap);
                 canvas.drawText("G" + g, x + cellW / 2f, dp(16), text);
+            }
+
+            if (elements != null && elements.size() >= selectedZ) {
+                Element selected = element(selectedZ);
+                text.setTextAlign(Paint.Align.LEFT);
+                text.setTextSize(Math.max(9f, width * 0.013f));
+                text.setColor(NAVY);
+                canvas.drawText(
+                        "انتخاب: " + selected.symbol + "   دوره " + selected.period +
+                                "   گروه " + selected.groupText,
+                        dp(4), dp(16), text
+                );
+                text.setTextAlign(Paint.Align.CENTER);
+                text.setTextSize(Math.max(7f, cellW * 0.13f));
+                text.setColor(NAVY);
             }
 
             for (int p = 1; p <= 7; p++) {
@@ -406,7 +449,7 @@ public class MainActivity extends Activity {
             text.setTextAlign(Paint.Align.LEFT);
             text.setTextSize(Math.max(8f, width * 0.012f));
             text.setColor(Color.DKGRAY);
-            canvas.drawText("VERSION 0.28  |  BUILD 28  |  118 elements", dp(4), height - dp(4), text);
+            canvas.drawText("VERSION 0.29  |  BUILD 29  |  118 elements", dp(4), height - dp(4), text);
         }
 
         private int findElementAt(float x, float y) {
