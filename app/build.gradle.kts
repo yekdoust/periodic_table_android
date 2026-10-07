@@ -5,11 +5,11 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.periodictable.v029"
+        applicationId = "com.example.periodictable.v030"
         minSdk = 23
         targetSdk = 35
-        versionCode = 29
-        versionName = "0.29.0"
-        // VERIFICATION BUILD 29 - PERIOD GROUP HIGHLIGHT
+        versionCode = 30
+        versionName = "0.30.0"
+        // VERIFICATION BUILD 30 - CATEGORY COLOR LEGEND
     }
 }
