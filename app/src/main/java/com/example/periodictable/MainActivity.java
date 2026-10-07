@@ -383,11 +383,11 @@ public class MainActivity extends Activity {
                 drawCell(canvas, element(90 + i), x, yAn, cellW, cellH);
             }
 
-            // نشانگر تشخیصی
+            // شناسهٔ نسخه برای راستی‌آزمایی
             text.setTextAlign(Paint.Align.LEFT);
             text.setTextSize(Math.max(8f, width * 0.012f));
             text.setColor(Color.DKGRAY);
-            canvas.drawText("VERSION 0.25  |  118 elements", dp(4), height - dp(4), text);
+            canvas.drawText("VERSION 0.26  |  BUILD 26  |  118 elements", dp(4), height - dp(4), text);
         }
 
         @Override
@@ -430,6 +430,7 @@ public class MainActivity extends Activity {
                     if (z > 0) {
                         selectedZ = z;
                         invalidate();
+                        showElementDialog(z);
                     }
                 }
             }
@@ -511,6 +512,72 @@ public class MainActivity extends Activity {
 
     private Element element(int z) {
         return elements.get(z - 1);
+    }
+
+    private void showElementDialog(int z) {
+        if (z < 1 || z > 118 || elements == null || elements.size() < 118) return;
+
+        Element e = element(z);
+
+        LinearLayout box = new LinearLayout(MainActivity.this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(18), dp(6), dp(18), dp(6));
+        box.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+
+        TextView title = textView(
+                e.symbol + " — " + e.nameFa,
+                20, NAVY, true
+        );
+        title.setGravity(Gravity.CENTER);
+        box.addView(title, new LinearLayout.LayoutParams(-1, dp(42)));
+
+        TextView basic = textView(
+                "عدد اتمی: " + e.z +
+                "    جرم اتمی: " + e.mass +
+                "\nدوره: " + e.period +
+                "    گروه: " + e.groupText +
+                "\nدسته: " + e.categoryFa,
+                15, Color.DKGRAY, true
+        );
+        box.addView(basic, new LinearLayout.LayoutParams(-1, dp(82)));
+
+        TextView compact = textView(
+                "آرایش فشرده\n" + prettyCompact(e.config),
+                16, CYAN, true
+        );
+        compact.setTextDirection(View.TEXT_DIRECTION_LTR);
+        compact.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+        compact.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+        compact.setBackgroundColor(Color.parseColor("#EEF3F7"));
+        box.addView(compact, new LinearLayout.LayoutParams(-1, dp(68)));
+
+        TextView full = new TextView(MainActivity.this);
+        full.setText(prettyFullColored(e.config));
+        full.setTextSize(14);
+        full.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        full.setTextDirection(View.TEXT_DIRECTION_LTR);
+        full.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+        full.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+        full.setPadding(dp(6), dp(4), dp(6), dp(4));
+        full.setBackgroundColor(Color.parseColor("#FAFAFA"));
+        box.addView(full, new LinearLayout.LayoutParams(-1, dp(92)));
+
+        int electrons = electronCount(e.config);
+        TextView extra = textView(
+                "توزیع لایه‌ای: " + shellText(shellDistribution(e.config)) +
+                "\nیون‌های رایج: " + ions.getOrDefault(z, "ثبت نشده") +
+                "\nکنترل: " + electrons + " الکترون",
+                13, Color.DKGRAY, false
+        );
+        extra.setPadding(dp(4), dp(8), dp(4), dp(4));
+        box.addView(extra, new LinearLayout.LayoutParams(-1, dp(82)));
+
+        AlertDialog dialog = new AlertDialog.Builder(MainActivity.this)
+                .setTitle("مشخصات عنصر")
+                .setView(box)
+                .setPositiveButton("بستن", null)
+                .create();
+        dialog.show();
     }
 
     private void selectElement(int z) {
