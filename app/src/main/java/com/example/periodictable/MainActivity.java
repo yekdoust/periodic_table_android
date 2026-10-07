@@ -307,7 +307,7 @@ public class MainActivity extends Activity {
             t.setTypeface(Typeface.DEFAULT_BOLD);
             t.setTextAlign(Paint.Align.CENTER);
             t.setTextSize(Math.max(24, w * 0.05f));
-            c.drawText("PERIODIC TABLE TEST", w / 2f, h * 0.14f, t);
+            c.drawText("PERIODIC TABLE TEST  —  VERSION 0.23", w / 2f, h * 0.14f, t);
 
             float gap = Math.max(12, w * 0.02f);
             float boxW = (w - 4 * gap) / 3f;
@@ -320,7 +320,7 @@ public class MainActivity extends Activity {
 
             t.setColor(Color.YELLOW);
             t.setTextSize(Math.max(18, w * 0.035f));
-            c.drawText("اگر این ۳ خانه دیده می‌شوند، موتور Canvas سالم است.",
+            c.drawText("BUILD 23  |  اگر این ۳ خانه دیده می‌شوند، Canvas سالم است.",
                     w / 2f, y + boxH + h * 0.15f, t);
 
             t.setTextSize(Math.max(14, w * 0.025f));
