@@ -47,6 +47,7 @@ public class MainActivity extends Activity {
     private int selectedZ = 1;
     private final Handler touchHandler = new Handler();
     private Runnable longPressAction;
+    private boolean longPressed = false;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -432,11 +433,15 @@ public class MainActivity extends Activity {
             if (event.getAction() == android.view.MotionEvent.ACTION_DOWN) {
                 final float downX = event.getX();
                 final float downY = event.getY();
+                final float rawX = event.getRawX();
+                final float rawY = event.getRawY();
+                longPressed = false;
 
                 longPressAction = () -> {
                     int z = findElementAt(downX, downY);
                     if (z > 0) {
-                        showQuickInfo(z, event.getRawX(), event.getRawY());
+                        longPressed = true;
+                        showQuickInfo(z, rawX, rawY);
                     }
                 };
                 touchHandler.postDelayed(longPressAction, 550);
@@ -466,11 +471,12 @@ public class MainActivity extends Activity {
             if (cellH < dp(36)) cellH = dp(36);
 
             int z = findElementAt(event.getX(), event.getY());
-            if (z > 0) {
+            if (z > 0 && !longPressed) {
                 selectedZ = z;
                 invalidate();
                 showElementDialog(z);
             }
+            longPressed = false;
             return true;
         }
     }
