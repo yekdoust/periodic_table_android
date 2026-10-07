@@ -41,7 +41,7 @@ public class MainActivity extends Activity {
     private List<Element> elements;
     private Map<Integer, String> ions;
     private TextView[] infoValues;
-    private PeriodicTableCanvas tableCanvas;
+    private DiagnosticView tableCanvas;
     private final Map<Integer, TextView> tableCells = new HashMap<>();
     private int selectedZ = 1;
 
@@ -279,7 +279,7 @@ public class MainActivity extends Activity {
     }
 
     private View buildTableRows() {
-        tableCanvas = new PeriodicTableCanvas();
+        tableCanvas = new DiagnosticView();
         return tableCanvas;
     }
 
