@@ -58,8 +58,12 @@ public class MainActivity extends Activity {
             throw new RuntimeException(e);
         }
 
-        buildUi();
-        selectElement(1);
+        // مرحله تشخیصی: جدول مستقیماً تمام صفحه را پر می‌کند.
+        // در این نسخه هیچ ScrollView/LinearLayout برای خود جدول وجود ندارد.
+        tableCanvas = new PeriodicTableCanvas();
+        setContentView(tableCanvas);
+        selectedZ = 1;
+        tableCanvas.invalidate();
     }
 
     private int dp(int v) {
@@ -295,129 +299,140 @@ public class MainActivity extends Activity {
         private final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-        private final int cellW = dp(82);
-        private final int cellH = dp(68);
-        private final int gap = dp(4);
-        private final int stepX = cellW + gap;
-        private final int stepY = cellH + gap;
-        private final int left = dp(50);
-        private final int top = dp(36);
-
         PeriodicTableCanvas() {
             super(MainActivity.this);
-            setBackgroundColor(BG);
+            setBackgroundColor(Color.WHITE);
             fill.setStyle(Paint.Style.FILL);
             stroke.setStyle(Paint.Style.STROKE);
-            stroke.setStrokeWidth(dp(1));
             text.setTypeface(Typeface.DEFAULT_BOLD);
             setClickable(true);
         }
 
-        private int bgFor(Element e) {
-            return categoryColor(e.category);
-        }
+        private void drawCell(Canvas canvas, Element el, float l, float t, float w, float h) {
+            RectF r = new RectF(l, t, l + w, t + h);
 
-        private void drawCell(Canvas canvas, Element e, int col, int row) {
-            float l = left + col * stepX;
-            float t = top + row * stepY;
-            RectF r = new RectF(l, t, l + cellW, t + cellH);
+            fill.setColor(categoryColor(el.category));
+            canvas.drawRoundRect(r, Math.min(w, h) * 0.10f, Math.min(w, h) * 0.10f, fill);
 
-            fill.setColor(bgFor(e));
-            canvas.drawRoundRect(r, dp(8), dp(8), fill);
-
-            stroke.setColor(e.z == selectedZ ? Color.WHITE : Color.parseColor("#4BAFCC"));
-            stroke.setStrokeWidth(dp(e.z == selectedZ ? 3 : 1));
-            canvas.drawRoundRect(r, dp(8), dp(8), stroke);
+            stroke.setColor(el.z == selectedZ ? Color.WHITE : Color.parseColor("#24566A"));
+            stroke.setStrokeWidth(Math.max(1f, w * (el.z == selectedZ ? 0.035f : 0.012f)));
+            canvas.drawRoundRect(r, Math.min(w, h) * 0.10f, Math.min(w, h) * 0.10f, stroke);
 
             text.setTextAlign(Paint.Align.CENTER);
             text.setColor(Color.parseColor("#17324D"));
 
-            text.setTextSize(dp(9));
-            canvas.drawText(String.valueOf(e.z), r.centerX(), t + dp(15), text);
+            text.setTextSize(Math.max(8f, w * 0.17f));
+            canvas.drawText(String.valueOf(el.z), r.centerX(), t + h * 0.20f, text);
 
-            text.setTextSize(dp(16));
-            canvas.drawText(e.symbol, r.centerX(), t + dp(34), text);
+            text.setTextSize(Math.max(10f, w * 0.28f));
+            canvas.drawText(el.symbol, r.centerX(), t + h * 0.47f, text);
 
-            text.setTextSize(dp(8));
-            canvas.drawText("A=" + e.mass, r.centerX(), t + dp(49), text);
-            canvas.drawText("G" + e.groupText + "  P" + e.period, r.centerX(), t + dp(62), text);
+            text.setTextSize(Math.max(6f, w * 0.12f));
+            canvas.drawText("A=" + el.mass, r.centerX(), t + h * 0.70f, text);
+            canvas.drawText("G" + el.groupText + " P" + el.period, r.centerX(), t + h * 0.88f, text);
         }
 
         @Override
         protected void onDraw(Canvas canvas) {
             super.onDraw(canvas);
 
+            int width = getWidth();
+            int height = getHeight();
+
+            // جدول اصلی در تمام عرض صفحه، بدون اسکرول افقی.
+            float labelW = Math.max(dp(22), width * 0.035f);
+            float gap = Math.max(dp(2), width * 0.003f);
+            float cellW = (width - labelW - gap * 19f - dp(8)) / 18f;
+
+            float top = dp(24);
+            float bottom = dp(12);
+            float cellH = Math.min(dp(58), (height - top - bottom - gap * 9f) / 9f);
+            if (cellH < dp(36)) cellH = dp(36);
+
             text.setColor(NAVY);
             text.setTextAlign(Paint.Align.CENTER);
-            text.setTextSize(dp(10));
+            text.setTextSize(Math.max(7f, cellW * 0.13f));
 
             for (int g = 1; g <= 18; g++) {
-                canvas.drawText("G" + g,
-                        left + (g - 1) * stepX + cellW / 2f,
-                        dp(24), text);
+                float x = labelW + gap + (g - 1) * (cellW + gap);
+                canvas.drawText("G" + g, x + cellW / 2f, dp(16), text);
             }
 
-            text.setTextAlign(Paint.Align.CENTER);
             for (int p = 1; p <= 7; p++) {
-                canvas.drawText("P" + p,
-                        dp(22),
-                        top + (p - 1) * stepY + dp(38), text);
+                float y = top + (p - 1) * (cellH + gap);
+                canvas.drawText("P" + p, labelW / 2f, y + cellH * 0.58f, text);
 
-                for (Element e : elements) {
-                    if (e.period == p && e.group >= 1 && e.group <= 18
-                            && !((e.z >= 58 && e.z <= 71) || (e.z >= 90 && e.z <= 103))) {
-                        drawCell(canvas, e, e.group - 1, p - 1);
+                for (Element el : elements) {
+                    if (el.period == p && el.group >= 1 && el.group <= 18 &&
+                            !((el.z >= 58 && el.z <= 71) || (el.z >= 90 && el.z <= 103))) {
+                        float x = labelW + gap + (el.group - 1) * (cellW + gap);
+                        drawCell(canvas, el, x, y, cellW, cellH);
                     }
                 }
             }
 
-            canvas.drawText("Ln", dp(22), top + 7 * stepY + dp(38), text);
-            canvas.drawText("An", dp(22), top + 8 * stepY + dp(38), text);
+            // بلوک f
+            float yLn = top + 7 * (cellH + gap);
+            float yAn = top + 8 * (cellH + gap);
+            canvas.drawText("Ln", labelW / 2f, yLn + cellH * 0.58f, text);
+            canvas.drawText("An", labelW / 2f, yAn + cellH * 0.58f, text);
 
             for (int i = 0; i < 14; i++) {
-                drawCell(canvas, element(58 + i), 3 + i, 7);
-                drawCell(canvas, element(90 + i), 3 + i, 8);
+                float x = labelW + gap + (3 + i) * (cellW + gap);
+                drawCell(canvas, element(58 + i), x, yLn, cellW, cellH);
+                drawCell(canvas, element(90 + i), x, yAn, cellW, cellH);
             }
+
+            // نشانگر تشخیصی
+            text.setTextAlign(Paint.Align.LEFT);
+            text.setTextSize(Math.max(8f, width * 0.012f));
+            text.setColor(Color.DKGRAY);
+            canvas.drawText("118 elements", dp(4), height - dp(4), text);
         }
 
         @Override
         public boolean onTouchEvent(android.view.MotionEvent event) {
             if (event.getAction() != android.view.MotionEvent.ACTION_UP) return true;
 
-            float x = event.getX() - left;
-            float y = event.getY() - top;
-            int col = (int)(x / stepX);
-            int row = (int)(y / stepY);
+            int width = getWidth();
+            int height = getHeight();
 
-            if (x >= 0 && col >= 0 && col < 18 && row >= 0 && row < 9) {
-                float withinX = x - col * stepX;
-                float withinY = y - row * stepY;
-                if (withinX <= cellW && withinY <= cellH) {
+            float labelW = Math.max(dp(22), width * 0.035f);
+            float gap = Math.max(dp(2), width * 0.003f);
+            float cellW = (width - labelW - gap * 19f - dp(8)) / 18f;
+            float top = dp(24);
+            float bottom = dp(12);
+            float cellH = Math.min(dp(58), (height - top - bottom - gap * 9f) / 9f);
+            if (cellH < dp(36)) cellH = dp(36);
+
+            float x = event.getX();
+            float y = event.getY();
+
+            int col = (int)((x - labelW - gap) / (cellW + gap));
+            int row = (int)((y - top) / (cellH + gap));
+
+            if (col >= 0 && col < 18 && row >= 0 && row < 9) {
+                float localX = x - (labelW + gap + col * (cellW + gap));
+                float localY = y - (top + row * (cellH + gap));
+                if (localX >= 0 && localX <= cellW && localY >= 0 && localY <= cellH) {
                     int z = -1;
                     if (row < 7) {
-                        for (Element e : elements) {
-                            if (e.period == row + 1 && e.group == col + 1 &&
-                                !((e.z >= 58 && e.z <= 71) || (e.z >= 90 && e.z <= 103))) {
-                                z = e.z;
+                        for (Element el : elements) {
+                            if (el.period == row + 1 && el.group == col + 1 &&
+                                    !((el.z >= 58 && el.z <= 71) || (el.z >= 90 && el.z <= 103))) {
+                                z = el.z;
                                 break;
                             }
                         }
                     } else if (col >= 3 && col <= 16) {
-                        z = (row == 7) ? 58 + (col - 3) : 90 + (col - 3);
+                        z = row == 7 ? 58 + col - 3 : 90 + col - 3;
                     }
                     if (z > 0) {
-                        selectElement(z);
+                        selectedZ = z;
                         invalidate();
-                        performClick();
                     }
                 }
             }
-            return true;
-        }
-
-        @Override
-        public boolean performClick() {
-            super.performClick();
             return true;
         }
     }
