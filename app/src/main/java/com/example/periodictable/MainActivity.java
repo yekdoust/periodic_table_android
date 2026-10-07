@@ -62,10 +62,25 @@ public class MainActivity extends Activity {
             throw new RuntimeException(e);
         }
 
-        // مرحله تشخیصی: جدول مستقیماً تمام صفحه را پر می‌کند.
-        // در این نسخه هیچ ScrollView/LinearLayout برای خود جدول وجود ندارد.
         tableCanvas = new PeriodicTableCanvas();
-        setContentView(tableCanvas);
+
+        FrameLayout root = new FrameLayout(this);
+        root.setBackgroundColor(Color.WHITE);
+        root.addView(tableCanvas, new FrameLayout.LayoutParams(-1, -1));
+
+        Button searchButton = new Button(this);
+        searchButton.setText("جستجو");
+        searchButton.setTextSize(13);
+        searchButton.setTextColor(Color.WHITE);
+        searchButton.setBackground(rounded(NAVY, NAVY, 1, 10));
+        searchButton.setOnClickListener(v -> showSearchDialog());
+
+        FrameLayout.LayoutParams searchLp =
+                new FrameLayout.LayoutParams(dp(96), dp(50), Gravity.TOP | Gravity.RIGHT);
+        searchLp.setMargins(0, dp(4), dp(6), 0);
+        root.addView(searchButton, searchLp);
+
+        setContentView(root);
         selectedZ = 1;
         tableCanvas.invalidate();
     }
@@ -391,7 +406,7 @@ public class MainActivity extends Activity {
             text.setTextAlign(Paint.Align.LEFT);
             text.setTextSize(Math.max(8f, width * 0.012f));
             text.setColor(Color.DKGRAY);
-            canvas.drawText("VERSION 0.27  |  BUILD 27  |  118 elements", dp(4), height - dp(4), text);
+            canvas.drawText("VERSION 0.28  |  BUILD 28  |  118 elements", dp(4), height - dp(4), text);
         }
 
         private int findElementAt(float x, float y) {
@@ -555,6 +570,67 @@ public class MainActivity extends Activity {
 
     private Element element(int z) {
         return elements.get(z - 1);
+    }
+
+    private void showSearchDialog() {
+        EditText input = new EditText(MainActivity.this);
+        input.setSingleLine(true);
+        input.setHint("عدد اتمی، نماد، نام فارسی یا انگلیسی");
+        input.setTextSize(16);
+        input.setGravity(Gravity.RIGHT);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        input.setPadding(dp(10), dp(4), dp(10), dp(4));
+
+        LinearLayout box = new LinearLayout(MainActivity.this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(12), dp(4), dp(12), dp(4));
+        box.addView(input, new LinearLayout.LayoutParams(-1, dp(58)));
+
+        AlertDialog dialog = new AlertDialog.Builder(MainActivity.this)
+                .setTitle("جست‌وجوی عنصر")
+                .setView(box)
+                .setNegativeButton("لغو", null)
+                .setPositiveButton("جست‌وجو", null)
+                .create();
+
+        dialog.setOnShowListener(d -> {
+            Button ok = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            ok.setOnClickListener(v -> {
+                String q = input.getText().toString().trim().toLowerCase(Locale.ROOT);
+                if (q.isEmpty()) {
+                    input.setError("عبارت جست‌وجو را وارد کنید");
+                    return;
+                }
+
+                Element found = null;
+                for (Element e : elements) {
+                    if (q.equals(String.valueOf(e.z)) ||
+                            q.equals(e.symbol.toLowerCase(Locale.ROOT)) ||
+                            e.name.toLowerCase(Locale.ROOT).contains(q) ||
+                            e.nameFa.contains(q)) {
+                        found = e;
+                        break;
+                    }
+                }
+
+                if (found == null) {
+                    input.setError("عنصر پیدا نشد");
+                    return;
+                }
+
+                selectedZ = found.z;
+                tableCanvas.invalidate();
+                dialog.dismiss();
+                showElementDialog(found.z);
+            });
+
+            input.requestFocus();
+            dialog.getWindow().setSoftInputMode(
+                    android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE
+            );
+        });
+
+        dialog.show();
     }
 
     private void showQuickInfo(int z, float screenX, float screenY) {
