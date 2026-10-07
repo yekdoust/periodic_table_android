@@ -4,6 +4,9 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.os.Bundle;
 import android.graphics.Color;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.text.InputType;
@@ -38,6 +41,7 @@ public class MainActivity extends Activity {
     private List<Element> elements;
     private Map<Integer, String> ions;
     private TextView[] infoValues;
+    private PeriodicTableCanvas tableCanvas;
     private final Map<Integer, TextView> tableCells = new HashMap<>();
     private int selectedZ = 1;
 
@@ -173,7 +177,7 @@ public class MainActivity extends Activity {
         tableScrollH.setHorizontalScrollBarEnabled(true);
         tableScrollH.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
 
-        FrameLayout tableRows = buildTableRows();
+        View tableRows = buildTableRows();
         HorizontalScrollView.LayoutParams tableRowsLp =
                 new HorizontalScrollView.LayoutParams(dp(1710), dp(730));
         tableRowsLp.gravity = Gravity.TOP | Gravity.LEFT;
@@ -281,74 +285,141 @@ public class MainActivity extends Activity {
         return t;
     }
 
-    private FrameLayout buildTableRows() {
-        final int cellW = dp(86);
-        final int cellH = dp(72);
-        final int colStep = dp(90);
-        final int rowStep = dp(76);
-        final int left0 = dp(50);
-        final int top0 = dp(34);
+    private View buildTableRows() {
+        tableCanvas = new PeriodicTableCanvas();
+        return tableCanvas;
+    }
 
-        FrameLayout canvas = new FrameLayout(this);
-        canvas.setBackgroundColor(BG);
-        canvas.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+    private final class PeriodicTableCanvas extends View {
+        private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-        // Header: G1 ... G18
-        for (int g = 1; g <= 18; g++) {
-            TextView h = labelCell("G" + g, cellW, dp(28));
-            FrameLayout.LayoutParams hp = new FrameLayout.LayoutParams(cellW, dp(28));
-            hp.leftMargin = left0 + (g - 1) * colStep;
-            hp.topMargin = dp(2);
-            canvas.addView(h, hp);
+        private final int cellW = dp(82);
+        private final int cellH = dp(68);
+        private final int gap = dp(4);
+        private final int stepX = cellW + gap;
+        private final int stepY = cellH + gap;
+        private final int left = dp(50);
+        private final int top = dp(36);
+
+        PeriodicTableCanvas() {
+            super(MainActivity.this);
+            setBackgroundColor(BG);
+            fill.setStyle(Paint.Style.FILL);
+            stroke.setStyle(Paint.Style.STROKE);
+            stroke.setStrokeWidth(dp(1));
+            text.setTypeface(Typeface.DEFAULT_BOLD);
+            setClickable(true);
         }
 
-        // Period labels and element cells.
-        for (int p = 1; p <= 7; p++) {
-            TextView pl = labelCell("P" + p, dp(42), cellH);
-            FrameLayout.LayoutParams pp = new FrameLayout.LayoutParams(dp(42), cellH);
-            pp.leftMargin = dp(2);
-            pp.topMargin = top0 + (p - 1) * rowStep;
-            canvas.addView(pl, pp);
+        private int bgFor(Element e) {
+            return categoryColor(e.category);
+        }
+
+        private void drawCell(Canvas canvas, Element e, int col, int row) {
+            float l = left + col * stepX;
+            float t = top + row * stepY;
+            RectF r = new RectF(l, t, l + cellW, t + cellH);
+
+            fill.setColor(bgFor(e));
+            canvas.drawRoundRect(r, dp(8), dp(8), fill);
+
+            stroke.setColor(e.z == selectedZ ? Color.WHITE : Color.parseColor("#4BAFCC"));
+            stroke.setStrokeWidth(dp(e.z == selectedZ ? 3 : 1));
+            canvas.drawRoundRect(r, dp(8), dp(8), stroke);
+
+            text.setTextAlign(Paint.Align.CENTER);
+            text.setColor(Color.parseColor("#17324D"));
+
+            text.setTextSize(dp(9));
+            canvas.drawText(String.valueOf(e.z), r.centerX(), t + dp(15), text);
+
+            text.setTextSize(dp(16));
+            canvas.drawText(e.symbol, r.centerX(), t + dp(34), text);
+
+            text.setTextSize(dp(8));
+            canvas.drawText("A=" + e.mass, r.centerX(), t + dp(49), text);
+            canvas.drawText("G" + e.groupText + "  P" + e.period, r.centerX(), t + dp(62), text);
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+
+            text.setColor(NAVY);
+            text.setTextAlign(Paint.Align.CENTER);
+            text.setTextSize(dp(10));
 
             for (int g = 1; g <= 18; g++) {
-                Element e = findByPeriodGroup(p, g);
-                if (e == null) continue;
-                TextView cell = makeElementCell(e);
-                FrameLayout.LayoutParams cp = new FrameLayout.LayoutParams(cellW, cellH);
-                cp.leftMargin = left0 + (g - 1) * colStep;
-                cp.topMargin = top0 + (p - 1) * rowStep;
-                canvas.addView(cell, cp);
+                canvas.drawText("G" + g,
+                        left + (g - 1) * stepX + cellW / 2f,
+                        dp(24), text);
+            }
+
+            text.setTextAlign(Paint.Align.CENTER);
+            for (int p = 1; p <= 7; p++) {
+                canvas.drawText("P" + p,
+                        dp(22),
+                        top + (p - 1) * stepY + dp(38), text);
+
+                for (Element e : elements) {
+                    if (e.period == p && e.group >= 1 && e.group <= 18
+                            && !((e.z >= 58 && e.z <= 71) || (e.z >= 90 && e.z <= 103))) {
+                        drawCell(canvas, e, e.group - 1, p - 1);
+                    }
+                }
+            }
+
+            canvas.drawText("Ln", dp(22), top + 7 * stepY + dp(38), text);
+            canvas.drawText("An", dp(22), top + 8 * stepY + dp(38), text);
+
+            for (int i = 0; i < 14; i++) {
+                drawCell(canvas, element(58 + i), 3 + i, 7);
+                drawCell(canvas, element(90 + i), 3 + i, 8);
             }
         }
 
-        // Lanthanides and actinides.
-        TextView lnLabel = labelCell("Ln", dp(42), cellH);
-        FrameLayout.LayoutParams lnp = new FrameLayout.LayoutParams(dp(42), cellH);
-        lnp.leftMargin = dp(2);
-        lnp.topMargin = top0 + 7 * rowStep;
-        canvas.addView(lnLabel, lnp);
+        @Override
+        public boolean onTouchEvent(android.view.MotionEvent event) {
+            if (event.getAction() != android.view.MotionEvent.ACTION_UP) return true;
 
-        TextView anLabel = labelCell("An", dp(42), cellH);
-        FrameLayout.LayoutParams anp = new FrameLayout.LayoutParams(dp(42), cellH);
-        anp.leftMargin = dp(2);
-        anp.topMargin = top0 + 8 * rowStep;
-        canvas.addView(anLabel, anp);
+            float x = event.getX() - left;
+            float y = event.getY() - top;
+            int col = (int)(x / stepX);
+            int row = (int)(y / stepY);
 
-        for (int i = 0; i < 14; i++) {
-            TextView ln = makeElementCell(element(58 + i));
-            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(cellW, cellH);
-            lp.leftMargin = left0 + (3 + i) * colStep;
-            lp.topMargin = top0 + 7 * rowStep;
-            canvas.addView(ln, lp);
-
-            TextView an = makeElementCell(element(90 + i));
-            FrameLayout.LayoutParams ap = new FrameLayout.LayoutParams(cellW, cellH);
-            ap.leftMargin = left0 + (3 + i) * colStep;
-            ap.topMargin = top0 + 8 * rowStep;
-            canvas.addView(an, ap);
+            if (x >= 0 && col >= 0 && col < 18 && row >= 0 && row < 9) {
+                float withinX = x - col * stepX;
+                float withinY = y - row * stepY;
+                if (withinX <= cellW && withinY <= cellH) {
+                    int z = -1;
+                    if (row < 7) {
+                        for (Element e : elements) {
+                            if (e.period == row + 1 && e.group == col + 1 &&
+                                !((e.z >= 58 && e.z <= 71) || (e.z >= 90 && e.z <= 103))) {
+                                z = e.z;
+                                break;
+                            }
+                        }
+                    } else if (col >= 3 && col <= 16) {
+                        z = (row == 7) ? 58 + (col - 3) : 90 + (col - 3);
+                    }
+                    if (z > 0) {
+                        selectElement(z);
+                        invalidate();
+                        performClick();
+                    }
+                }
+            }
+            return true;
         }
 
-        return canvas;
+        @Override
+        public boolean performClick() {
+            super.performClick();
+            return true;
+        }
     }
 
     private LinearLayout makeRow() {
@@ -410,6 +481,7 @@ public class MainActivity extends Activity {
             TextView cell = tableCells.get(e.z);
             if (cell != null) cell.setBackground(cellBackground(e, e.z == selectedZ));
         }
+        if (tableCanvas != null) tableCanvas.invalidate();
     }
 
     private Element findByPeriodGroup(int period, int group) {
